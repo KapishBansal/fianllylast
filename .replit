@@ -1,0 +1,59 @@
+modules = ["nodejs-20", "web", "python-3.11"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "ODIN-Server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Python-Backend"
+
+[[workflows.workflow]]
+name = "ODIN-Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd OdinOptimal && npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow]]
+name = "Python-Backend"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd OdinOptimal/python_backend && pip install -r requirements.txt && PORT=3001 python app.py"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "--chdir", "python_backend", "wsgi:app"]
+build = ["pip", "install", "-r", "python_backend/requirements.txt"]
